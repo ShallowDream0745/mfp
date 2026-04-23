@@ -9,20 +9,12 @@ mkdir -p "${log_dir}"
 # Experiment config
 # =========================
 
-TASKS=(
-    # "myo-reach"
-    # "myo-reach-hard"
-    "myo-obj-hold"
-    "myo-obj-hold-hard"
-    "myo-pose"
-    # "myo-pose-hard"
-    "myo-pen-twirl"
-    "myo-pen-twirl-hard"
-    "myo-key-turn"
-    "myo-key-turn-hard"
+DM_CONTROL_TASKS=(
+    "humanoid-run"
+    # "humanoid-walk"
+    # "dog-run"
 )
-
-ENV_TYPE="myosuite"
+ENV_TYPE="dm_control"
 
 SEEDS=(11)
 # SEEDS=(11 12 13)
@@ -34,9 +26,9 @@ EXTRA="flow-raw"
 # Resource config
 # =========================
 
-VISIBLE_GPUS=(7)
+VISIBLE_GPUS=(6 7)
 NUM_GPUS=${#VISIBLE_GPUS[@]}
-MAX_TASKS_PER_GPU=4
+MAX_TASKS_PER_GPU=2
 MAX_CONCURRENT=$((NUM_GPUS * MAX_TASKS_PER_GPU))
 
 current_jobs() {
@@ -51,7 +43,7 @@ echo "NUM_GPUS=${NUM_GPUS}"
 echo "MAX_TASKS_PER_GPU=${MAX_TASKS_PER_GPU}"
 echo "MAX_CONCURRENT=${MAX_CONCURRENT}"
 
-for task in "${TASKS[@]}"; do
+for task in "${DM_CONTROL_TASKS[@]}"; do
     for seed in "${SEEDS[@]}"; do
         gpu_index=$(( (task_id / MAX_TASKS_PER_GPU) % NUM_GPUS ))
         gpu=${VISIBLE_GPUS[$gpu_index]}

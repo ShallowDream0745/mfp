@@ -27,8 +27,8 @@ ENV_TYPE="myosuite"
 SEEDS=(11)
 # SEEDS=(11 12 13)
 
-UPDATE_FLOW=true
-EXTRA="flow-raw"
+UPDATE_FLOW=false
+EXTRA="gauss"
 
 # =========================
 # Resource config
