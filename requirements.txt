@@ -1,0 +1,15 @@
+torch
+torchrl
+tensordict
+hydra-core
+hydra-submitit-launcher
+wandb
+termcolor
+imageio
+mujoco
+dm_control
+myosuite
+tqdm
+gymnasium
+matplotlib
+pandas
