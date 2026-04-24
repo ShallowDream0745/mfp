@@ -295,7 +295,9 @@ class MFP:
 						self.cfg.action_dim,
 						device=std.device,
 					)
-				).clamp(-1, 1)
+				)
+			# Apply periodic wrapping for angular actions
+			actions = ((actions + 1) % 2) - 1
 
 			if self.cfg.multitask:
 				actions = actions * self.model._action_masks[task]
@@ -379,9 +381,12 @@ class MFP:
 		else:
 			a = mu
 
+		# Periodic wrapping: map action from [-1, 1] with wraparound
+		# This handles the circular nature of angular actions where -1 and 1 represent the same angle
+		wrapped_a = ((a + 1) % 2) - 1
 		if debug:
-			return a.clamp_(-1, 1), mu, std, debug_info
-		return a.clamp_(-1, 1), mu, std
+			return wrapped_a, mu, std, debug_info
+		return wrapped_a, mu, std
 
 	def update_flow(self, z, action, task):
 		"""
