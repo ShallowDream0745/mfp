@@ -496,8 +496,8 @@ def plot_mppi_trajectories_on_axis(ax, debug_info, step_size=0.1, goal_radius=0.
         all_values = np.array([])
     norm, cmap = _compute_colormap_norm(all_values)
 
-    # Setup goals
-    _setup_goals_on_axis(ax, goal_radius, show_gradient=True)
+    # # Setup goals
+    # _setup_goals_on_axis(ax, goal_radius, show_gradient=True)
 
     # Plot trajectories
     _plot_trajectories_on_axis(ax, processed, norm, cmap, use_value_cmap=True, traj_type='mppi')
