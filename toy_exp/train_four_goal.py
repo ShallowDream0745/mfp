@@ -32,9 +32,9 @@ def get_config(policy_type='mlp', seed=1, steps=10_000, extra=''):
         'obs': 'state',
 
         # Environment parameters
-        'step_size': 0.40,
+        'step_size': 0.10,
         'goal_radius': 0.1,
-        'max_steps': 20,
+        'max_steps': 40,
         'step_penalty': -0.01,
 
         # Training parameters
@@ -63,7 +63,7 @@ def get_config(policy_type='mlp', seed=1, steps=10_000, extra=''):
         'horizon': 3,
         'min_std': 0.05,
         'max_std': 0.5,
-        'temperature': 10,
+        'temperature': 1.0,
 
         # Flow-specific parameters
         'update_flow': (policy_type == 'flow'),
