@@ -48,6 +48,9 @@ debug_info = {
 ================================================================================
 """
 
+STEP_SIZE = 0.1
+GOAL_RADIUS = 0.1
+
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
@@ -431,7 +434,7 @@ def plot_mppi_trajs(debug_info, save_dir):
     fig = plt.figure(figsize=(12, 6))
     # Initial MPPI trajectories
     ax1 = plt.subplot(1, 2, 1)
-    plot_mppi_trajectories_on_axis(ax1, debug_info, step_size=0.4, goal_radius=0.1)
+    plot_mppi_trajectories_on_axis(ax1, debug_info, step_size=STEP_SIZE, goal_radius=0.1)
     ax1.set_title('Initial MPPI Trajectories', fontsize=12, fontweight='bold')
 
     # Plot 8: Final MPPI trajectories
@@ -443,7 +446,7 @@ def plot_mppi_trajs(debug_info, save_dir):
             'actions': last_iter['final_actions'], 
             'values': last_iter['final_values'],
         }}, 
-        step_size=0.4, 
+        step_size=STEP_SIZE, 
         goal_radius=0.1
     )
     ax2.set_title('Final MPPI Trajectories', fontsize=12, fontweight='bold')
@@ -611,6 +614,6 @@ def plot_all_debug_info(real_trajectories, debug_info, save_dir):
 
     # Plot real trajectories
     plot_real_trajectories(real_trajectories, save_dir, filename='final_trajectories.png',
-                          step_size=0.4, goal_radius=0.1)
+                          step_size=STEP_SIZE, goal_radius=0.1)
 
     print("All debug_info visualizations completed!")

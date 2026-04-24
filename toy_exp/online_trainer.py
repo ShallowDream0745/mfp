@@ -64,7 +64,7 @@ class OnlineTrainer(Trainer):
             while not done:
                 # Get debug info only for first episode, first timestep
                 debug = (i == 0 and t == 0)
-                result = self.agent.act(obs, t0=(t == 0), eval_mode=True, debug=debug)
+                result = self.agent.act(obs, t0=(t == 0), eval_mode=False, debug=debug)
 
                 if debug:
                     action, _, _, debug_info = result
