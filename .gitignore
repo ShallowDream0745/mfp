@@ -16,3 +16,4 @@ log*
 **/ref-*/
 .claude/
 *egg-info*
+humanoid-bench/

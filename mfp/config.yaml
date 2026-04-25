@@ -6,10 +6,10 @@ defaults:
 # task: humanoid-run
 # task: walker-run
 # task: cartpole-balance
-task: myo-reach
+# task: myo-reach
 # task: myo-pose
 # task: myo-obj-hold
-# task: lift-cube
+task: humanoid_h1hand-stand-v0
 # task: mw-button-press
 obs: state
 update_flow: true
@@ -18,8 +18,8 @@ compile: true
 
 # environment type: dm_control, myosuite, humanoid, gym, maniskill, metaworld
 # env_type: dm_control
-env_type: myosuite
-# env_type: maniskill
+# env_type: myosuite
+env_type: humanoid
 # env_type: metaworld
 
 # evaluation
