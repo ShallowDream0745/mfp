@@ -24,11 +24,11 @@ TASKS=(
 
 ENV_TYPE="myosuite"
 
-SEEDS=(11)
+SEEDS=(12 13)
 # SEEDS=(11 12 13)
 
 UPDATE_FLOW=true
-EXTRA="flow-raw"
+EXTRA="mfp"
 
 # =========================
 # Resource config
@@ -36,7 +36,7 @@ EXTRA="flow-raw"
 
 VISIBLE_GPUS=(7)
 NUM_GPUS=${#VISIBLE_GPUS[@]}
-MAX_TASKS_PER_GPU=4
+MAX_TASKS_PER_GPU=3
 MAX_CONCURRENT=$((NUM_GPUS * MAX_TASKS_PER_GPU))
 
 current_jobs() {
@@ -51,8 +51,8 @@ echo "NUM_GPUS=${NUM_GPUS}"
 echo "MAX_TASKS_PER_GPU=${MAX_TASKS_PER_GPU}"
 echo "MAX_CONCURRENT=${MAX_CONCURRENT}"
 
-for task in "${TASKS[@]}"; do
-    for seed in "${SEEDS[@]}"; do
+for seed in "${SEEDS[@]}"; do
+    for task in "${TASKS[@]}"; do
         gpu_index=$(( (task_id / MAX_TASKS_PER_GPU) % NUM_GPUS ))
         gpu=${VISIBLE_GPUS[$gpu_index]}
 

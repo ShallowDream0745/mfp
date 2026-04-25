@@ -40,8 +40,8 @@ echo "NUM_GPUS=${NUM_GPUS}"
 echo "MAX_TASKS_PER_GPU=${MAX_TASKS_PER_GPU}"
 echo "MAX_CONCURRENT=${MAX_CONCURRENT}"
 
-for num_flow_trajs in "${NUM_FLOW_TRAJS[@]}"; do
-    for seed in "${SEEDS[@]}"; do
+for seed in "${SEEDS[@]}"; do
+    for num_flow_trajs in "${NUM_FLOW_TRAJS[@]}"; do
         gpu_index=$(( (task_id / MAX_TASKS_PER_GPU) % NUM_GPUS ))
         gpu=${VISIBLE_GPUS[$gpu_index]}
 
