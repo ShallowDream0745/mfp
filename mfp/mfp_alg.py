@@ -356,28 +356,16 @@ class MFP:
 		flow_input = torch.cat([z, xt, t_exp], dim=-1)
 		pred_vel = self.model._flow_pi(flow_input)
 
-		# Compute Q-value weights for loss weighting using advantage-based method
+		# Compute Q-value weights for loss weighting
 		with torch.no_grad():
-			# Compute Q-values using target action x1 (executed action)
+			# Compute Q-values using target action x1
 			Q_values = self.model.Q(z, x1, task, return_type="avg")
-
-			# Sample actions from current FLOW policy for advantage computation
-			flow_actions = self.model.flow_policy(z)  # [N, action_dim]
-
-			# Compute minimum Q-value of current flow policy actions
-			min_q_flow = self.model.Q(z, flow_actions, task, return_type="min")  # [N, 1]
-
-			# Compute advantage: how much better is executed action than flow policy?
-			advantage = Q_values - min_q_flow  # [N, 1]
-
-			# Apply ReLU to zero out negative advantages
-			weights = torch.relu(advantage).detach()  # [N, 1]
-
-			# Apply exponential transformation with mean centering
-			weights = torch.exp(weights - weights.mean())  # [N, 1]
-
-			# Apply clamp (use tighter bounds like ref-flow)
-			weights = torch.clamp(weights, min=1e-3, max=1.0)
+			# Compute weights: exp(Q - Q.mean())
+			weights = torch.exp(Q_values - Q_values.mean())
+			# Apply clamp from config
+			weight_max = getattr(self.cfg, "flow_weight_max", 1.0)
+			weight_min = getattr(self.cfg, "flow_weight_min", 0.001)
+			weights = torch.clamp(weights, min=weight_min, max=weight_max)
 
 		# Compute weighted MSE loss
 		flow_bc_loss = ((pred_vel - target_vel) ** 2 * weights.unsqueeze(-1)).mean()
@@ -390,11 +378,6 @@ class MFP:
 			"flow_weight_mean": weights.mean().detach(),
 			"flow_weight_max": weights.max().detach(),
 			"flow_weight_min": weights.min().detach(),
-			"flow_weight_zero_pct": (weights < 1e-3).float().mean().detach() * 100,
-			"flow_advantage_mean": advantage.mean().detach(),
-			"flow_advantage_std": advantage.std().detach(),
-			"flow_q_flow_mean": min_q_flow.mean().detach(),
-			"flow_q_values_mean": Q_values.mean().detach(),
 		}
 		return flow_bc_loss, info
 	
@@ -523,11 +506,6 @@ class MFP:
 				"flow_weight_mean": float(flow_info["flow_weight_mean"].item()),
 				"flow_weight_max": float(flow_info["flow_weight_max"].item()),
 				"flow_weight_min": float(flow_info["flow_weight_min"].item()),
-				"flow_weight_zero_pct": float(flow_info["flow_weight_zero_pct"].item()),
-				"flow_advantage_mean": float(flow_info["flow_advantage_mean"].item()),
-				"flow_advantage_std": float(flow_info["flow_advantage_std"].item()),
-				"flow_q_flow_mean": float(flow_info["flow_q_flow_mean"].item()),
-				"flow_q_values_mean": float(flow_info["flow_q_values_mean"].item()),
 			})
 		return info
 
