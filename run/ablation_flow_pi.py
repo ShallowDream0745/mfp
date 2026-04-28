@@ -15,7 +15,7 @@ This script runs two comprehensive ablation studies:
    - Values: 0, 64, 128, 192, 256, 320, 384, 448, 512
    - Generates performance curves showing impact of flow trajectory count
 
-All results are saved to mppi_test_results/{task_name}/ with:
+All results are saved to result_ablation_flow_pi/{task_name}/ with:
 - CSV data files
 - Comparison plots
 - Performance curves
@@ -165,17 +165,17 @@ def run_flow_pi_ablation(model_path, config_path, task_name, num_episodes, resul
 
     save_results_to_csv(results, f"{task_name}_pi_flow_ablation", results_dir)
     plot_comparison(results, f"{task_name}_pi_flow", results_dir)
-    plot_episode_trends(results, f"{task_name}_pi_flow", results_dir)
+    # plot_episode_trends(results, f"{task_name}_pi_flow", results_dir)
 
     print(f"\n✓ PI/Flow ablation results saved to: {results_dir}")
 
     return results
 
 
-def run_flow_trajs_ablation(model_path, config_path, task_name, num_episodes, results_dir, num_points=9):
+def run_flow_trajs_ablation(model_path, config_path, task_name, num_episodes, results_dir):
     """
     Run flow trajectories ablation study.
-    Tests num_flow_trajs from 0 to 512 with num_pi_trajs=0.
+    Tests num_flow_trajs from 0 to 512 with num_pi_trajs=0 (11 configurations).
 
     Args:
         model_path: Path to model checkpoint
@@ -183,17 +183,17 @@ def run_flow_trajs_ablation(model_path, config_path, task_name, num_episodes, re
         task_name: Name of the task
         num_episodes: Number of episodes per run
         results_dir: Directory to save results
-        num_points: Number of test points (default: 9)
 
     Returns:
         dict: Results with num_flow_trajs as keys
     """
     print("\n" + "="*60)
-    print(f"Flow Trajectories Ablation Study ({num_points} Configurations)")
+    print("Flow Trajectories Ablation Study (11 Configurations)")
     print("="*60)
 
-    # Generate test values from 0 to 512
-    flow_trajs_values = np.linspace(0, 512, num_points, dtype=int)
+    # Use specific test values
+    flow_trajs_values = np.array([0, 12, 24, 48, 72, 96, 144, 192, 256, 384, 512])
+    num_points = len(flow_trajs_values)
 
     results = {}
 
@@ -225,13 +225,14 @@ def run_flow_trajs_ablation(model_path, config_path, task_name, num_episodes, re
     # Compare with key points
     reward_0 = results[0]['mean_reward']
     reward_48 = results[48]['mean_reward'] if 48 in results else None
-    reward_512 = results[512]['mean_reward']
+    reward_512 = results[512]['mean_reward'] if 512 in results else None
 
     print(f"Best performance: {best_reward:.2f} at num_flow_trajs={best_flow_trajs}")
     print(f"Pure MPPI (0):   {reward_0:.2f}")
     if reward_48:
         print(f"Default Flow (48): {reward_48:.2f}")
-    print(f"All Flow (512):  {reward_512:.2f}")
+    if reward_512:
+        print(f"All Flow (512):  {reward_512:.2f}")
 
     # Show trend
     print(f"\n--- Performance Trend ---")
@@ -256,7 +257,7 @@ def run_flow_trajs_ablation(model_path, config_path, task_name, num_episodes, re
 
 def plot_flow_trajs_curve(results, task_name, save_dir):
     """
-    Plot flow trajectories ablation curve.
+    Plot flow trajectories ablation curve with both bar and line plots.
 
     Args:
         results: Dictionary with num_flow_trajs as keys and stats as values
@@ -270,53 +271,48 @@ def plot_flow_trajs_curve(results, task_name, save_dir):
     flow_trajs = sorted(results.keys())
     mean_rewards = [results[k]['mean_reward'] for k in flow_trajs]
     std_rewards = [results[k]['std_reward'] for k in flow_trajs]
-    mean_lengths = [results[k]['mean_length'] for k in flow_trajs]
-    std_lengths = [results[k]['std_length'] for k in flow_trajs]
 
-    # Create figure with two subplots
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    # Create x positions for uniform spacing
+    x_positions = range(len(flow_trajs))
 
-    # Plot 1: Mean Reward vs num_flow_trajs
-    ax1.errorbar(flow_trajs, mean_rewards, yerr=std_rewards,
-                 marker='o', linewidth=2.5, markersize=8,
-                 capsize=5, capthick=2, color='#2E86AB',
-                 ecolor='#A23B72', elinewidth=2)
-    ax1.set_xlabel('Number of Flow Trajectories', fontsize=12, fontweight='bold')
-    ax1.set_ylabel('Mean Reward', fontsize=12, fontweight='bold')
-    ax1.set_title(f'Reward vs Flow Trajectories - {task_name}', fontsize=14, fontweight='bold')
-    ax1.grid(True, alpha=0.3, linestyle='--')
+    # Create figure
+    fig, ax = plt.subplots(figsize=(12, 6))
 
-    # Add value labels
-    for i, (x, y, std) in enumerate(zip(flow_trajs, mean_rewards, std_rewards)):
-        ax1.text(x, y + std + 2, f'{y:.1f}', ha='center', va='bottom',
-                fontsize=9, fontweight='bold', color='#2E86AB')
+    # Mean Reward vs num_flow_trajs (Bar + Line)
+    # Bar plot
+    bars = ax.bar(x_positions, mean_rewards, yerr=std_rewards,
+                  capsize=4, alpha=0.6, color='#2E86AB',
+                  edgecolor='black', linewidth=1.2, width=0.6,
+                  label='Bar (Mean ± Std)')
+    # Line plot on top
+    ax.errorbar(x_positions, mean_rewards, yerr=std_rewards,
+                marker='o', linewidth=2.5, markersize=8,
+                capsize=5, capthick=2, color='#1E5A7A',
+                ecolor='#A23B72', elinewidth=2, zorder=3,
+                label='Line (Trend)')
+    ax.set_xlabel('Number of Flow Trajectories', fontsize=12, fontweight='bold')
+    ax.set_ylabel('Mean Reward', fontsize=12, fontweight='bold')
+    ax.set_title(f'Reward vs Flow Trajectories - {task_name}', fontsize=14, fontweight='bold')
+    ax.grid(True, alpha=0.3, linestyle='--')
+    ax.legend(fontsize=10)
 
-    # Highlight important points
-    ax1.axvline(x=0, color='gray', linestyle='--', alpha=0.5, label='Pure MPPI')
-    ax1.axvline(x=48, color='green', linestyle='--', alpha=0.5, label='Default Flow')
-    ax1.axvline(x=512, color='red', linestyle='--', alpha=0.5, label='All Flow')
-    ax1.legend(fontsize=10)
-
-    # Plot 2: Mean Episode Length vs num_flow_trajs
-    ax2.errorbar(flow_trajs, mean_lengths, yerr=std_lengths,
-                 marker='s', linewidth=2.5, markersize=8,
-                 capsize=5, capthick=2, color='#C73E1D',
-                 ecolor='#A23B72', elinewidth=2)
-    ax2.set_xlabel('Number of Flow Trajectories', fontsize=12, fontweight='bold')
-    ax2.set_ylabel('Mean Episode Length', fontsize=12, fontweight='bold')
-    ax2.set_title(f'Episode Length vs Flow Trajectories - {task_name}', fontsize=14, fontweight='bold')
-    ax2.grid(True, alpha=0.3, linestyle='--')
+    # Set x-ticks to show all values
+    ax.set_xticks(x_positions)
+    ax.set_xticklabels(flow_trajs, rotation=45, ha='right', fontsize=9)
 
     # Add value labels
-    for i, (x, y, std) in enumerate(zip(flow_trajs, mean_lengths, std_lengths)):
-        ax2.text(x, y + std + 1, f'{y:.0f}', ha='center', va='bottom',
-                fontsize=9, fontweight='bold', color='#C73E1D')
+    for i, (x, y, std) in enumerate(zip(x_positions, mean_rewards, std_rewards)):
+        ax.text(x, y + std + 2, f'{y:.1f}', ha='center', va='bottom',
+                fontsize=8, fontweight='bold', color='#2E86AB')
 
     # Highlight important points
-    ax2.axvline(x=0, color='gray', linestyle='--', alpha=0.5, label='Pure MPPI')
-    ax2.axvline(x=48, color='green', linestyle='--', alpha=0.5, label='Default Flow')
-    ax2.axvline(x=512, color='red', linestyle='--', alpha=0.5, label='All Flow')
-    ax2.legend(fontsize=10)
+    idx_0 = flow_trajs.index(0) if 0 in flow_trajs else 0
+    idx_48 = flow_trajs.index(48) if 48 in flow_trajs else len(flow_trajs) - 1
+    idx_512 = flow_trajs.index(512) if 512 in flow_trajs else len(flow_trajs) - 1
+    ax.axvline(x=idx_0, color='gray', linestyle='--', alpha=0.5, label='Pure MPPI')
+    ax.axvline(x=idx_48, color='green', linestyle='--', alpha=0.5, label='Default Flow')
+    ax.axvline(x=idx_512, color='red', linestyle='--', alpha=0.5, label='All Flow')
+    ax.legend(fontsize=9, loc='best')
 
     plt.tight_layout()
 
@@ -398,7 +394,7 @@ def save_results_to_csv(results, task_name, save_dir):
 
 def plot_comparison(results, task_name, save_dir):
     """
-    Create comparison plots for evaluation results.
+    Create comparison plots for evaluation results 
 
     Args:
         results: Dictionary containing all run results
@@ -423,13 +419,12 @@ def plot_comparison(results, task_name, save_dir):
     mean_lengths = [results[name]['mean_length'] for name in run_names]
     std_lengths = [results[name]['std_length'] for name in run_names]
 
-    # Create figure with two subplots
-    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(14, 5))
+    colors = ['#2E86AB', '#F18F01', '#C73E1D', '#A23B72']
 
-    # Plot 1: Mean Reward
-    colors1 = ['#2E86AB', '#F18F01', '#C73E1D', '#A23B72']
+    # Mean Reward Comparison
+    fig1, ax1 = plt.subplots(figsize=(10, 6))
     bars1 = ax1.bar(range(len(run_names)), mean_rewards, yerr=std_rewards,
-                    capsize=5, alpha=0.8, color=colors1, edgecolor='black', linewidth=1.2)
+                    capsize=5, alpha=0.8, color=colors, edgecolor='black', linewidth=1.2)
     ax1.set_xlabel('Configuration', fontsize=12, fontweight='bold')
     ax1.set_ylabel('Mean Reward', fontsize=12, fontweight='bold')
     ax1.set_title(f'Reward Comparison - {task_name}', fontsize=14, fontweight='bold')
@@ -444,36 +439,18 @@ def plot_comparison(results, task_name, save_dir):
         ax1.text(bar.get_x() + bar.get_width()/2., height + std + 0.5,
                 f'{mean:.1f}', ha='center', va='bottom', fontsize=10, fontweight='bold')
 
-    # Plot 2: Mean Episode Length
-    colors2 = ['#2E86AB', '#F18F01', '#C73E1D', '#A23B72']
-    bars2 = ax2.bar(range(len(run_names)), mean_lengths, yerr=std_lengths,
-                    capsize=5, alpha=0.8, color=colors2, edgecolor='black', linewidth=1.2)
-    ax2.set_xlabel('Configuration', fontsize=12, fontweight='bold')
-    ax2.set_ylabel('Mean Episode Length', fontsize=12, fontweight='bold')
-    ax2.set_title(f'Episode Length Comparison - {task_name}', fontsize=14, fontweight='bold')
-    ax2.set_xticks(range(len(run_names)))
-    ax2.set_xticklabels(labels, fontsize=10)
-    ax2.grid(axis='y', alpha=0.3, linestyle='--')
-    ax2.axhline(y=mean_lengths[0], color='gray', linestyle='--', alpha=0.5, label='Baseline')
-
-    # Add value labels on bars
-    for i, (bar, mean, std) in enumerate(zip(bars2, mean_lengths, std_lengths)):
-        height = bar.get_height()
-        ax2.text(bar.get_x() + bar.get_width()/2., height + std + 0.5,
-                f'{mean:.1f}', ha='center', va='bottom', fontsize=10, fontweight='bold')
-
     plt.tight_layout()
 
-    # Save figure
-    plot_path = os.path.join(save_dir, f"{task_name}_{timestamp}.png")
-    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-    print(f"Comparison plot saved to: {plot_path}")
+    # Save reward comparison figure
+    plot_path1 = os.path.join(save_dir, f"{task_name}_reward_comparison_{timestamp}.png")
+    plt.savefig(plot_path1, dpi=300, bbox_inches='tight')
+    print(f"Reward comparison plot saved to: {plot_path1}")
     plt.close()
 
 
 def plot_episode_trends(results, task_name, save_dir):
     """
-    Plot episode-by-episode reward trends.
+    Plot episode-by-episode reward and length trends as separate figures.
 
     Args:
         results: Dictionary containing all run results
@@ -482,8 +459,6 @@ def plot_episode_trends(results, task_name, save_dir):
     """
     os.makedirs(save_dir, exist_ok=True)
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-    fig, ax = plt.subplots(figsize=(12, 6))
 
     display_names = {
         'normal': 'Normal (PI+Flow)',
@@ -506,28 +481,55 @@ def plot_episode_trends(results, task_name, save_dir):
         'pure_mppi': 's'
     }
 
-    # Plot each configuration
+    # Plot 1: Episode-wise Reward Trends
+    fig1, ax1 = plt.subplots(figsize=(12, 6))
+
     for run_name, stats in results.items():
         episodes = range(1, len(stats['all_rewards']) + 1)
         rewards = stats['all_rewards']
         label = display_names.get(run_name, run_name)
-        ax.plot(episodes, rewards, marker=markers.get(run_name, 'o'),
-               color=colors.get(run_name, 'gray'), linewidth=2, markersize=8,
-               label=label, alpha=0.8)
+        ax1.plot(episodes, rewards, marker=markers.get(run_name, 'o'),
+                color=colors.get(run_name, 'gray'), linewidth=2, markersize=8,
+                label=label, alpha=0.8)
 
-    ax.set_xlabel('Episode Number', fontsize=12, fontweight='bold')
-    ax.set_ylabel('Reward', fontsize=12, fontweight='bold')
-    ax.set_title(f'Episode-wise Reward Trends - {task_name}', fontsize=14, fontweight='bold')
-    ax.legend(fontsize=10, loc='best')
-    ax.grid(True, alpha=0.3, linestyle='--')
-    ax.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
+    ax1.set_xlabel('Episode Number', fontsize=12, fontweight='bold')
+    ax1.set_ylabel('Reward', fontsize=12, fontweight='bold')
+    ax1.set_title(f'Episode-wise Reward Trends - {task_name}', fontsize=14, fontweight='bold')
+    ax1.legend(fontsize=10, loc='best')
+    ax1.grid(True, alpha=0.3, linestyle='--')
+    ax1.axhline(y=0, color='black', linestyle='-', linewidth=0.5)
 
     plt.tight_layout()
 
-    # Save figure
-    plot_path = os.path.join(save_dir, f"{task_name}_trends_{timestamp}.png")
-    plt.savefig(plot_path, dpi=300, bbox_inches='tight')
-    print(f"Trends plot saved to: {plot_path}")
+    # Save reward figure
+    plot_path1 = os.path.join(save_dir, f"{task_name}_reward_trends_{timestamp}.png")
+    plt.savefig(plot_path1, dpi=300, bbox_inches='tight')
+    print(f"Reward trends plot saved to: {plot_path1}")
+    plt.close()
+
+    # Plot 2: Episode-wise Length Trends
+    fig2, ax2 = plt.subplots(figsize=(12, 6))
+
+    for run_name, stats in results.items():
+        episodes = range(1, len(stats['all_lengths']) + 1)
+        lengths = stats['all_lengths']
+        label = display_names.get(run_name, run_name)
+        ax2.plot(episodes, lengths, marker=markers.get(run_name, 'o'),
+                color=colors.get(run_name, 'gray'), linewidth=2, markersize=8,
+                label=label, alpha=0.8)
+
+    ax2.set_xlabel('Episode Number', fontsize=12, fontweight='bold')
+    ax2.set_ylabel('Episode Length', fontsize=12, fontweight='bold')
+    ax2.set_title(f'Episode-wise Length Trends - {task_name}', fontsize=14, fontweight='bold')
+    ax2.legend(fontsize=10, loc='best')
+    ax2.grid(True, alpha=0.3, linestyle='--')
+
+    plt.tight_layout()
+
+    # Save length figure
+    plot_path2 = os.path.join(save_dir, f"{task_name}_length_trends_{timestamp}.png")
+    plt.savefig(plot_path2, dpi=300, bbox_inches='tight')
+    print(f"Length trends plot saved to: {plot_path2}")
     plt.close()
 
 
@@ -687,7 +689,8 @@ Examples:
     parser.add_argument(
         "--model",
         type=str,
-        default="logs/humanoid-run/11/0415-202822-flow-rho/models/final.pt",
+        # default="logs/humanoid-walk/11/0426-002420-flow-raw/models/final.pt",
+        default="logs/humanoid-run/11/0423-200652-flow-raw/models/final.pt",
         help="Path to model checkpoint"
     )
     parser.add_argument(
@@ -699,6 +702,7 @@ Examples:
     parser.add_argument(
         "--task",
         type=str,
+        # default="humanoid-walk",
         default="humanoid-run",
         help="Name of the task"
     )
@@ -716,9 +720,23 @@ Examples:
         print(f"Error: Model file not found: {args.model}")
         sys.exit(1)
 
-    # Create results directory
-    results_dir = os.path.join("mppi_test_results", args.task)
+    # Create results directory with timestamp
+    timestamp_str = datetime.now().strftime("%Y%m%d-%H%M%S")
+    results_dir = os.path.join("result_ablation_flow_pi", f"{timestamp_str}-{args.task}")
     os.makedirs(results_dir, exist_ok=True)
+
+    # Save model info to txt file
+    model_info_path = os.path.join(results_dir, "model_info.txt")
+    with open(model_info_path, "w") as f:
+        f.write(f"Experiment Configuration\n")
+        f.write(f"=" * 60 + "\n")
+        f.write(f"Timestamp: {timestamp_str}\n")
+        f.write(f"Model Path: {args.model}\n")
+        f.write(f"Config Path: {args.config}\n")
+        f.write(f"Task: {args.task}\n")
+        f.write(f"Episodes per run: {args.episodes}\n")
+        f.write(f"Results Directory: {results_dir}\n")
+        f.write(f"=" * 60 + "\n")
 
     print("\n" + "="*60)
     print("MPPI Comparison Test")
@@ -742,7 +760,7 @@ Examples:
     )
 
     # =====================================================
-    # Part 2: Flow Trajectories Ablation Study (9 configurations)
+    # Part 2: Flow Trajectories Ablation Study (10 configurations)
     # =====================================================
     # Comment out the next line to skip this part
     run_flow_trajs_ablation(
@@ -750,8 +768,7 @@ Examples:
         config_path=args.config,
         task_name=args.task,
         num_episodes=args.episodes,
-        results_dir=results_dir,
-        num_points=9
+        results_dir=results_dir
     )
 
     print("\n" + "="*60)
