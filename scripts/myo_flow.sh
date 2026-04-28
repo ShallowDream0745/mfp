@@ -2,7 +2,7 @@
 
 set -u
 
-log_dir="training_logs"
+log_dir="training_logs_myo"
 mkdir -p "${log_dir}"
 
 # =========================
@@ -10,12 +10,12 @@ mkdir -p "${log_dir}"
 # =========================
 
 TASKS=(
-    # "myo-reach"
-    # "myo-reach-hard"
+    "myo-reach"
+    "myo-reach-hard"
     "myo-obj-hold"
     "myo-obj-hold-hard"
     "myo-pose"
-    # "myo-pose-hard"
+    "myo-pose-hard"
     "myo-pen-twirl"
     "myo-pen-twirl-hard"
     "myo-key-turn"
@@ -34,7 +34,7 @@ EXTRA="mfp"
 # Resource config
 # =========================
 
-VISIBLE_GPUS=(7)
+VISIBLE_GPUS=(0 1)
 NUM_GPUS=${#VISIBLE_GPUS[@]}
 MAX_TASKS_PER_GPU=3
 MAX_CONCURRENT=$((NUM_GPUS * MAX_TASKS_PER_GPU))
