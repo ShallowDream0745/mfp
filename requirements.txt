@@ -8,7 +8,7 @@ termcolor
 imageio
 mujoco
 dm_control
-myosuite
+# myosuite
 tqdm
 gymnasium
 matplotlib
